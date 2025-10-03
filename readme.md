@@ -44,13 +44,13 @@ python image_compressor.py analyze input.png analysis_results/
 #### Quick Testing
 ```bash
 # Run all tests
-python main.py --demo
+python main_demo.py --demo
 
 # Create sample images for testing
-python main.py --create-samples
+python main_demo.py --create-samples
 
 # Quick functionality test
-python main.py --quick-test
+python main_demo.py --quick-test
 ```
 
 
