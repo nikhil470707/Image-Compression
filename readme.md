@@ -1,6 +1,6 @@
 # Advanced Color Image Compression System
 
-A sophisticated image compression system implementing **Huffman Coding with Fibonacci Heap optimization** and **Run Length Encoding (RLE) preprocessing**. This project demonstrates advanced Data Structures and Algorithms (DSA) concepts in a practical, real-world application.
+A sophisticated image compression system implementing **Huffman Coding with Fibonacci Heap optimization** and **Run Length Encoding (RLE) preprocessing**. 
 
 ## Key Features
 
