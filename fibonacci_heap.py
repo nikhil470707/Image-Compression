@@ -1,13 +1,13 @@
-"""
-Fibonacci Heap Implementation
-Advanced priority queue with O(1) amortized insert and decrease-key operations
+"""Fibonacci heap implementation.
+
+Provides FibNode and FibonacciHeap classes.
 """
 
 import math
 from typing import Optional, Any, Dict, List
 
 class FibNode:
-    """Node in a Fibonacci Heap"""
+    # Node in the Fibonacci heap.
     def __init__(self, key: Any, data: Any = None):
         self.key = key
         self.data = data
@@ -25,36 +25,25 @@ class FibNode:
         return f"FibNode(key={self.key}, data={self.data})"
 
 class FibonacciHeap:
-    """
-    Fibonacci Heap implementation optimized for Huffman tree construction
-    
-    Key Operations:
-    - insert: O(1) amortized
-    - extract_min: O(log n) amortized  
-    - decrease_key: O(1) amortized
-    - merge: O(1)
-    """
+    # Fibonacci heap data structure.
     
     def __init__(self):
         self.min_node: Optional[FibNode] = None
         self.num_nodes = 0
-        self.node_map: Dict[Any, FibNode] = {}  # For decrease_key operations
+        self.node_map: Dict[Any, FibNode] = {}
     
     def is_empty(self) -> bool:
-        """Check if heap is empty"""
+        # Return True if the heap is empty.
         return self.num_nodes == 0
     
     def insert(self, key: Any, data: Any = None) -> FibNode:
-        """Insert new node with given key and data"""
+        # Insert a new node and return it.
         node = FibNode(key, data)
-        
-        # Store reference for potential decrease_key operations
         self.node_map[id(node)] = node
         
         if self.min_node is None:
             self.min_node = node
         else:
-            # Add to root list
             self._add_to_root_list(node)
             if node.key < self.min_node.key:
                 self.min_node = node
@@ -63,43 +52,39 @@ class FibonacciHeap:
         return node
     
     def get_min(self) -> Optional[FibNode]:
-        """Get minimum node without removing it"""
+        # Return the minimum node without removing it.
         return self.min_node
     
     def extract_min(self) -> Optional[FibNode]:
-        """Extract and return minimum node"""
+        # Remove and return the minimum node.
         min_node = self.min_node
-        
+
         if min_node is None:
             return None
-        
-        # Move children to root list
+
         if min_node.child:
             children = self._get_node_list(min_node.child)
             for child in children:
                 child.parent = None
                 self._add_to_root_list(child)
-        
-        # Remove min_node from root list
+
         self._remove_from_root_list(min_node)
-        
+
         if min_node == min_node.right:
-            # Was the only node
             self.min_node = None
         else:
             self.min_node = min_node.right
             self._consolidate()
-        
+
         self.num_nodes -= 1
-        
-        # Clean up node_map
+
         if id(min_node) in self.node_map:
             del self.node_map[id(min_node)]
-        
+
         return min_node
     
     def decrease_key(self, node: FibNode, new_key: Any):
-        """Decrease key of given node"""
+        # Decrease a node's key to new_key.
         if new_key > node.key:
             raise ValueError("New key is greater than current key")
         
@@ -114,7 +99,7 @@ class FibonacciHeap:
             self.min_node = node
     
     def merge(self, other: 'FibonacciHeap') -> 'FibonacciHeap':
-        """Merge two Fibonacci heaps"""
+        # Merge another heap into this one and return self.
         if other.is_empty():
             return self
         
@@ -124,7 +109,6 @@ class FibonacciHeap:
             self.node_map.update(other.node_map)
             return self
         
-        # Merge root lists
         self._merge_root_lists(other.min_node)
         
         if other.min_node.key < self.min_node.key:
@@ -136,51 +120,49 @@ class FibonacciHeap:
         return self
     
     def _add_to_root_list(self, node: FibNode):
-        """Add node to root list"""
+        # Add a node to the root list.
         if self.min_node is None:
             self.min_node = node
             node.left = node.right = node
         else:
-            node.left = self.min_node
-            node.right = self.min_node.right
-            self.min_node.right.left = node
-            self.min_node.right = node
+            node.left = self.min_node.left
+            node.right = self.min_node
+            self.min_node.left.right = node
+            self.min_node.left = node
     
     def _remove_from_root_list(self, node: FibNode):
-        """Remove node from root list"""
+        # Remove a node from the root list.
         if node.right == node:
             return
         node.left.right = node.right
         node.right.left = node.left
     
     def _consolidate(self):
-        """Consolidate trees of same degree"""
+        # Consolidate trees of equal degree.
         max_degree = int(math.log(self.num_nodes, 2)) + 1
         degree_table: List[Optional[FibNode]] = [None] * (max_degree + 1)
-        
-        # Get all root nodes
+
         roots = self._get_root_list()
-        
+
         for node in roots:
             degree = node.degree
-            
+
             while degree_table[degree] is not None:
                 other = degree_table[degree]
-                
+
                 if node.key > other.key:
                     node, other = other, node
-                
-                # Make other a child of node
+
                 self._link(other, node)
                 degree_table[degree] = None
                 degree += 1
-            
+
             degree_table[degree] = node
-        
-        # Rebuild root list and find new minimum
+
         self.min_node = None
         for node in degree_table:
             if node is not None:
+                node.parent = None
                 if self.min_node is None:
                     self.min_node = node
                     node.left = node.right = node
@@ -190,27 +172,24 @@ class FibonacciHeap:
                         self.min_node = node
     
     def _link(self, child: FibNode, parent: FibNode):
-        """Make child a child of parent"""
-        # Remove child from root list
+        # Make a node a child of another node.
         self._remove_from_root_list(child)
         
-        # Make child a child of parent
         if parent.child is None:
             parent.child = child
             child.left = child.right = child
         else:
-            child.left = parent.child
-            child.right = parent.child.right
-            parent.child.right.left = child
-            parent.child.right = child
+            child.left = parent.child.left
+            child.right = parent.child
+            parent.child.left.right = child
+            parent.child.left = child
         
         child.parent = parent
         parent.degree += 1
         child.mark = False
     
     def _cut(self, node: FibNode, parent: FibNode):
-        """Cut node from parent and add to root list"""
-        # Remove node from parent's child list
+        # Cut a node from its parent and add it to the root list.
         if parent.child == node:
             if node.right == node:
                 parent.child = None
@@ -221,13 +200,12 @@ class FibonacciHeap:
         node.right.left = node.left
         parent.degree -= 1
         
-        # Add to root list
         node.parent = None
         node.mark = False
         self._add_to_root_list(node)
     
     def _cascading_cut(self, node: FibNode):
-        """Perform cascading cut"""
+        # Perform cascading cuts as needed.
         parent = node.parent
         
         if parent is not None:
@@ -238,7 +216,7 @@ class FibonacciHeap:
                 self._cascading_cut(parent)
     
     def _get_root_list(self) -> List[FibNode]:
-        """Get list of all root nodes"""
+        # Return list of root nodes.
         if self.min_node is None:
             return []
         
@@ -254,7 +232,7 @@ class FibonacciHeap:
         return roots
     
     def _get_node_list(self, start_node: FibNode) -> List[FibNode]:
-        """Get circular list of nodes starting from given node"""
+        # Return nodes in the circular list starting at start_node.
         nodes = []
         current = start_node
         
@@ -267,15 +245,15 @@ class FibonacciHeap:
         return nodes
     
     def _merge_root_lists(self, other_min: FibNode):
-        """Merge root list with another heap's root list"""
+        # Merge another root list into this heap's root list.
         if self.min_node is None or other_min is None:
             return
         
-        # Connect the two circular lists
-        self.min_node.right.left = other_min.left
-        other_min.left.right = self.min_node.right
-        self.min_node.right = other_min
-        other_min.left = self.min_node
+        self.min_node.left.right = other_min
+        other_min.left.right = self.min_node
+        temp_left = self.min_node.left
+        self.min_node.left = other_min.left
+        other_min.left = temp_left
     
     def size(self) -> int:
         """Return number of nodes in heap"""
@@ -286,14 +264,3 @@ class FibonacciHeap:
     
     def __bool__(self) -> bool:
         return not self.is_empty()
-    
-    def display_heap(self):
-        """Display heap structure (for debugging)"""
-        if self.is_empty():
-            print("Empty heap")
-            return
-        
-        print(f"Heap with {self.num_nodes} nodes, min = {self.min_node.key}")
-        roots = self._get_root_list()
-        for i, root in enumerate(roots):
-            print(f"Root {i}: {root.key} (degree: {root.degree})")
